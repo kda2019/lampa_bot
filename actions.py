@@ -1,6 +1,6 @@
 import random, datetime
 from models import ChatModel, UserModel
-
+from settings import TOKEN
 
 async def eat_shawarma(bot, message):
     """Игра в которой юзер может получить +5, +2 или -4 к ламповости раз в 4 часа"""
@@ -46,7 +46,7 @@ async def check_top_lampovyh_cats(bot, message):
 
 
 async def mute_user(bot, message):
-    if (await bot.get_chat_member(message.chat.id, 954054488)).status != "administrator":
+    if (await bot.get_chat_member(message.chat.id, TOKEN.split(':')[0])).status != "administrator":
         await bot.send_message(message.chat.id, 'Я не смогу это сделать пока не стану админом :(')
 
     elif message.reply_to_message.from_user.is_bot:

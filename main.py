@@ -12,11 +12,11 @@ data = {}
 
 @dp.message_handler(lambda message: message.chat.id != message.from_user.id)
 async def group_messages(message):
-    if message.text == '/eat_shawarma':
+    if message.text.split('@')[0] == '/eat_shawarma':
         await eat_shawarma(bot, message)
-    elif message.text == '/check_my_lampovost':
+    elif message.text.split('@')[0] == '/check_my_lampovost':
         await check_my_lampovost(bot, message)
-    elif message.text == '/check_top_lampovyh_cats':
+    elif message.text.split('@')[0] == '/check_top_lampovyh_cats':
         await check_top_lampovyh_cats(bot, message)
     elif message.reply_to_message is not None and message.text.split()[0].lower() == 'мут':
         await mute_user(bot, message)
