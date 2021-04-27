@@ -61,16 +61,16 @@ async def mute_user(bot, message):
 
         try:
             time_mute = int(message.text.split()[1])
-        except:
+        except (IndexError, ValueError):
             time_mute = max_time_mute
 
         if time_mute > max_time_mute:
             time_mute = max_time_mute
-        elif time_mute < 1:
-            await bot.send_message(message.chat.id, 'Вы недостаточно ламповы чтобы кого-то замутить :(', reply_to_message_id=message.message_id)
-            return
 
-        if (await bot.get_chat_member(message.chat.id, message.reply_to_message.from_user.id)).status == "restricted":
+        if time_mute < 1:
+            await bot.send_message(message.chat.id, 'Вы недостаточно ламповы чтобы кого-то замутить :(', reply_to_message_id=message.message_id)
+
+        elif (await bot.get_chat_member(message.chat.id, message.reply_to_message.from_user.id)).status == "restricted":
             await bot.send_message(message.chat.id, f'{message.reply_to_message.from_user.first_name} уже поражен и не может сказать ни слова.', reply_to_message_id=message.message_id)
 
         else:
