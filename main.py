@@ -7,12 +7,14 @@ logging.basicConfig(level=logging.INFO)
 bot = Bot(TOKEN)
 dp = Dispatcher(bot)
 
-data = {}
+
 
 
 @dp.message_handler(lambda message: message.chat.id != message.from_user.id)
 async def group_messages(message):
-    if message.text.split('@')[0] == '/eat_shawarma':
+    if f"{message.from_user.id}_{message.chat.id}" in data:
+        await bot.delete_message(message.chat.id, message.message_id)
+    elif message.text.split('@')[0] == '/eat_shawarma':
         await eat_shawarma(bot, message)
     elif message.text.split('@')[0] == '/check_my_lampovost':
         await check_my_lampovost(bot, message)
