@@ -31,7 +31,7 @@ async def check_my_lampovost(bot, message):
     """Выводит ламповость юзера в текущем чате"""
     user, _ = UserModel.get_or_create(chat=ChatModel.get_or_create(chat_id=message.chat.id)[0],
                                       user_id=message.from_user.id)
-    await bot.send_message(message.chat.id, f'Твоя ламповость "{user.amount}"', reply_to_message_id=message.message_id)
+    await bot.send_message(message.chat.id, f'Твоя ламповость:  {user.amount}', reply_to_message_id=message.message_id)
 
 
 async def check_top_lampovyh_cats(bot, message):
@@ -57,19 +57,22 @@ async def mute_user(bot, message):
         await bot.send_message(message.chat.id, 'Я не смогу это сделать пока не стану админом :(', reply_to_message_id=message.message_id)
 
     elif message.reply_to_message.from_user.is_bot:  # Если целью мута является бот
-        await bot.send_message(message.chat.id, 'Зачем ты пытаешься поразить бота? Он бесчувственный пустой мешок нулей и единиц', reply_to_message_id=message.message_id)
+        await bot.send_message(message.chat.id, 'Зачем ты пытаешься поразить бота? Он бесчувственный пустой мешок нулей и единиц.', reply_to_message_id=message.message_id)
 
     else:
         user = UserModel.get_or_create(chat=ChatModel.get_or_create(chat_id=message.chat.id)[0], user_id=message.from_user.id)[0]
         max_time_mute = user.amount ** (1 / 2)
         try:
             time_mute = int(message.text.split()[1])
+            if time_mute < 1:
+                await bot.send_message(message.chat.id, 'Время мута не должно быть меньше 1.', reply_to_message_id=message.message_id)
+                return  # Если время мута зададут как 0 или отрицательное число, то бот никак не отреагирует
         except (IndexError, ValueError):
             time_mute = max_time_mute
         if time_mute > max_time_mute:
             time_mute = max_time_mute
         dt_mute = datetime.timedelta(minutes=time_mute)
-
+        # Выше происходит расчет времени мута
         if time_mute < 1:
             await bot.send_message(message.chat.id, 'Вы недостаточно ламповы чтобы кого-то замутить :(', reply_to_message_id=message.message_id)
 
