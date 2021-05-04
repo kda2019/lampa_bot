@@ -8,26 +8,60 @@ bot = Bot(TOKEN)
 dp = Dispatcher(bot)
 
 
-@dp.message_handler(lambda message: message.chat.id != message.from_user.id and f"{message.from_user.id}_{message.chat.id}" in data, content_types=types.ContentType.ANY)
+# Этот хендлер отвечает за удаление всех сообщений от админов находящихся в муте
+@dp.message_handler(lambda message:f"{message.from_user.id}_{message.chat.id}" in data, content_types=types.ContentType.ANY)
 async def delete_message(message):
-    """Удаляет все сообщения от админов, которые на данный момент находятся в муте"""
     await bot.delete_message(message.chat.id, message.message_id)
 
 
-@dp.message_handler(lambda message: message.chat.id != message.from_user.id)
-async def group_messages(message):
-    if message.text.split('@')[0] == '/eat_shawarma':
+# Хендлеры ниже отвечают за команды в общем чате
+@dp.message_handler(commands=['eat_shawarma'])
+async def eat_shawarma_handler(message):
+    if message.chat.id != message.from_user.id:
         await eat_shawarma(bot, message)
-    elif message.text.split('@')[0] == '/check_my_lampovost':
+
+
+@dp.message_handler(commands=['check_my_lampovost'])
+async def check_my_lampovost_handler(message):
+    if message.chat.id != message.from_user.id:
         await check_my_lampovost(bot, message)
-    elif message.text.split('@')[0] == '/check_top_lampovyh_cats':
-        await check_top_lampovyh_cats(bot, message)
-    elif message.reply_to_message is not None and message.text.split()[0].lower() == 'мут':
+
+
+@dp.message_handler(commands=['check_top_lampovyh_cats'])
+async def check_top_lampovyh_cats_handler(message):
+    if message.chat.id != message.from_user.id:
         await mute_user(bot, message)
 
-@dp.message_handler(lambda message: message.chat.id == message.from_user.id)
-async def group_messages(message):
-    await bot.send_message(message.from_user.id, 'На данном этапе разработки я общаюсь только в ламповых чатиках :)')
+
+@dp.message_handler(commands=['smoke_kalik'])
+async def smoke_kalik_handler(message):
+    if message.chat.id != message.from_user.id:
+        await smoke_kalik(bot, message)
+
+
+# Хендлеры ниже отвечают за команды в личном чате бота
+@dp.message_handler(commands=['start'])
+async def start_handler(message):
+    if message.chat.id == message.from_user.id:
+        await start(bot, message)
+
+
+@dp.message_handler(commands=['help'])
+async def help_handler(message):
+    if message.chat.id == message.from_user.id:
+        await help(bot, message)
+
+
+@dp.message_handler(lambda message: message.chat.id != message.from_user.id)
+async def group_messages_handler(message):
+    if message.reply_to_message is not None and message.text.split()[0].lower() == 'мут':
+        await mute_user(bot, message)
+
+#Хендлеры ниже отвечают за колбеки
+@dp.callback_query_handler()
+async def join_kalik_handler(call):
+    await join_to_kalik(bot, call)
+
 
 
 executor.start_polling(dp)
