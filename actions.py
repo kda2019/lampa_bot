@@ -3,9 +3,32 @@ from models import ChatModel, UserModel
 from settings import TOKEN
 from asyncio import sleep
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-
+from aiogram import exceptions
 data = []
 smoke_chats = {}
+
+
+def get_hours_str(hours):
+    if hours in [2, 3, 4]:
+        hours_str = 'часа'
+    elif hours == 1:
+        hours_str = 'час'
+    else:
+        hours_str = 'часов'
+    return hours_str
+
+
+def get_minutes_str(minutes, now=False):
+    if minutes in [2, 3, 4]:
+        minutes_str = 'минуты'
+    elif minutes == 1:
+        if now:
+            minutes_str = 'минута'
+        else:
+            minutes_str = 'минуту'
+    else:
+        minutes_str = 'минут'
+    return minutes_str
 
 
 async def start(bot, message):
@@ -26,22 +49,9 @@ async def eat_shawarma(bot, message):
                                       user_id=message.from_user.id)
     if datetime.datetime.now() - user.last_shava < datetime.timedelta(hours=4):
         time_to_next = datetime.timedelta(hours=4) - (datetime.datetime.now() - user.last_shava)
-        hours = time_to_next.seconds//3600
-        minutes = time_to_next.seconds%3600//60
-        if hours in [2, 3, 4]:
-            hours_str = 'часа'
-        elif hours == 1:
-            hours_str = 'час'
-        else:
-            hours_str = 'часов'
-
-        if minutes in [2, 3, 4]:
-            minutes_str = 'минуты'
-        elif minutes == 1:
-            minutes_str = 'минуту'
-        else:
-            minutes_str = 'минут'
-        await bot.send_message(message.chat.id, f'Ты недавно уже кушал(а), сдедующая шавуха будет через {hours} {hours_str} {minutes} {minutes_str}', reply_to_message_id=message.message_id)
+        hours = time_to_next.seconds // 3600
+        minutes = time_to_next.seconds % 3600 // 60
+        await bot.send_message(message.chat.id, f'Ты недавно уже кушал(а), сдедующая шавуха будет через {hours} {get_hours_str(hours)} {minutes} {get_minutes_str(minutes)}', reply_to_message_id=message.message_id)
     else:
         r = random.randint(1, 3)
         if r == 1:
@@ -132,24 +142,11 @@ async def smoke_kalik(bot, message):
     chat = ChatModel.get_or_create(chat_id=message.chat.id)[0]
     if message.chat.id in smoke_chats:
         await bot.send_message(message.chat.id, f'<a href="https://t.me/c/{abs(message.chat.id+1_000_000_000_000)}/{smoke_chats[message.chat.id]["message_id"]}">Калик</a> уже заправлен, ждем пока соберется компания.', reply_to_message_id=message.message_id, parse_mode='HTML')
-    elif datetime.datetime.now() - chat.last_kalik > datetime.timedelta(hours=5):
+    elif datetime.datetime.now() - chat.last_kalik < datetime.timedelta(hours=5):
         time_to_next = datetime.timedelta(hours=5) - (datetime.datetime.now() - chat.last_kalik)
         hours = time_to_next.seconds // 3600
         minutes = time_to_next.seconds % 3600 // 60
-        if hours in [2, 3, 4]:
-            hours_str = 'часа'
-        elif hours == 1:
-            hours_str = 'час'
-        else:
-            hours_str = 'часов'
-
-        if minutes in [2, 3, 4]:
-            minutes_str = 'минуты'
-        elif minutes == 1:
-            minutes_str = 'минуту'
-        else:
-            minutes_str = 'минут'
-        await bot.send_message(message.chat.id, f'Во время последнего посещения кальянной вас застукали менты и прикрыли заведение за нарушение правил локдауна. Подождите пока все уляжется. Ждать осталось {hours} {hours_str} {minutes} {minutes_str}', reply_to_message_id=message.message_id)
+        await bot.send_message(message.chat.id, f'Во время последнего посещения кальянной вас застукали менты и прикрыли заведение за нарушение правил локдауна. Подождите пока все уляжется. Ждать осталось {hours} {get_hours_str(hours)} {minutes} {get_minutes_str(minutes)}', reply_to_message_id=message.message_id)
     else:
         smoke_chats[message.chat.id] = {'users': []}
         smoke_chats[message.chat.id]['users'].append(message.from_user.id)
@@ -157,14 +154,16 @@ async def smoke_kalik(bot, message):
         message_info = await bot.send_message(message.chat.id, f"До конца сборов 5 минут, ждем 5 человек. Статус: {len(smoke_chats[message.chat.id]['users'])}/5", reply_markup=inline_btn)
         smoke_chats[message.chat.id]["message_id"] = message_info.message_id
         smoke_chats[message.chat.id]["timeout"] = 5
-        print(message_info)
         for i in range(smoke_chats[message.chat.id]["timeout"]):
             smoke_chats[message.chat.id]["timeout"] -= 1
             await sleep(60)
             if message.chat.id not in smoke_chats:
                 await bot.delete_message(chat_id=message_info.chat.id, message_id=message_info.message_id)
                 return
-            await bot.edit_message_text(chat_id=message_info.chat.id, message_id=message_info.message_id, text=f"До конца сборов {smoke_chats[message.chat.id]['timeout']} минут, ждем 5 человек. Статус: {len(smoke_chats[message.chat.id]['users'])}/5", reply_markup=inline_btn)
+            try:
+                await bot.edit_message_text(chat_id=message_info.chat.id, message_id=message_info.message_id, text=f"До конца сборов {smoke_chats[message.chat.id]['timeout']} {get_minutes_str(smoke_chats[message.chat.id]['timeout'], now=True)}, ждем 5 человек. Статус: {len(smoke_chats[message.chat.id]['users'])}/5", reply_markup=inline_btn)
+            except exceptions.MessageNotModified:
+                pass
         await bot.delete_message(chat_id=message_info.chat.id, message_id=message_info.message_id)
         print(smoke_chats[message.chat.id])
         del smoke_chats[message.chat.id]
@@ -172,14 +171,14 @@ async def smoke_kalik(bot, message):
         chat.last_kalik = datetime.datetime.now() - datetime.timedelta(hours=2.5)
         chat.save()
 
+
 async def join_to_kalik(bot, call):
-    print(call)
     if call.from_user.id in smoke_chats[call.message.chat.id]['users']:
         await call.answer(text="Вы уже присоеденились к компании. Ждите остальных")
     else:
         smoke_chats[call.message.chat.id]['users'].append(call.from_user.id)
         inline_btn = InlineKeyboardMarkup().add(InlineKeyboardButton('Присоединится', callback_data='join_kalik'))
-        await bot.edit_message_text(chat_id=call.message.chat.id, message_id=smoke_chats[call.message.chat.id]["message_id"], text=f"До конца сборов {smoke_chats[call.message.chat.id]['timeout']} минут, ждем 5 человек. Статус: {len(smoke_chats[call.message.chat.id]['users'])}/5",reply_markup=inline_btn)
+        await bot.edit_message_text(chat_id=call.message.chat.id, message_id=smoke_chats[call.message.chat.id]["message_id"], text=f"До конца сборов {smoke_chats[call.message.chat.id]['timeout']+1} {get_minutes_str(smoke_chats[call.message.chat.id]['timeout']+1, now=True)}, ждем 5 человек. Статус: {len(smoke_chats[call.message.chat.id]['users'])}/5",reply_markup=inline_btn)
         await call.answer(text="Вы успешно присоеденились к компании")
         if len(smoke_chats[call.message.chat.id]['users']) >= 5:
             text = "Ламповые коты "
