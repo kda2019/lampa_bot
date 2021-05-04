@@ -30,7 +30,7 @@ async def check_my_lampovost_handler(message):
 @dp.message_handler(commands=['check_top_lampovyh_cats'])
 async def check_top_lampovyh_cats_handler(message):
     if message.chat.id != message.from_user.id:
-        await check_top_lampovyh_cats_handler(bot, message)
+        await check_top_lampovyh_cats(bot, message)
 
 
 @dp.message_handler(commands=['smoke_kalik'])
