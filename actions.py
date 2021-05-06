@@ -139,6 +139,9 @@ async def mute_user(bot, message):
 
 
 async def smoke_kalik(bot, message):
+    """ Запускает процесс курения кальяна, в котором для получения ламповости необходимо набрать 5 человек.
+    Выводит сообщение с оставшимся временем, уже присоеденившимся количеством участников и кнопкой для участия.
+    """
     chat = ChatModel.get_or_create(chat_id=message.chat.id)[0]
     if message.chat.id in smoke_chats:
         await bot.send_message(message.chat.id, f'<a href="https://t.me/c/{abs(message.chat.id+1_000_000_000_000)}/{smoke_chats[message.chat.id]["message_id"]}">Калик</a> уже заправлен, ждем пока соберется компания.', reply_to_message_id=message.message_id, parse_mode='HTML')
@@ -173,6 +176,9 @@ async def smoke_kalik(bot, message):
 
 
 async def join_to_kalik(bot, call):
+    """ Неразрывно связаня с функцией smoke_kalik(), срабатывает при нажатии кнопки.
+    После того как будет набрано нужное количество людей, всем участникам будет выдано +6 к ламповости.
+    """
     if call.from_user.id in smoke_chats[call.message.chat.id]['users']:
         await call.answer(text="Вы уже присоеденились к компании. Ждите остальных")
     else:
@@ -195,3 +201,4 @@ async def join_to_kalik(bot, call):
             await bot.delete_message(chat_id=call.message.chat.id, message_id=smoke_chats[call.message.chat.id]["message_id"])
             text += "с кайфом покурили калик и получили + 6 к ламповости!"
             await bot.send_message(call.message.chat.id, text, parse_mode='HTML', disable_web_page_preview=True)
+            del smoke_chats[call.message.chat.id]
