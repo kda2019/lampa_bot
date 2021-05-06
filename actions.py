@@ -183,7 +183,7 @@ async def join_to_kalik(bot, call):
         if len(smoke_chats[call.message.chat.id]['users']) >= 5:
             text = "Ламповые коты "
             for i in smoke_chats[call.message.chat.id]['users']:
-                user = UserModel.get_or_create(user_id=call.from_user.id, chat=ChatModel.get_or_create(chat_id=call.message.chat.id)[0])[0]
+                user = UserModel.get_or_create(user_id=i, chat=ChatModel.get_or_create(chat_id=call.message.chat.id)[0])[0]
                 user_ = await bot.get_chat_member(call.message.chat.id, i)
                 if i == smoke_chats[call.message.chat.id]['users'][-1]:
                     text = text[:-2]
