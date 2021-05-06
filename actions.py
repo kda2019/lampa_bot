@@ -201,4 +201,7 @@ async def join_to_kalik(bot, call):
             await bot.delete_message(chat_id=call.message.chat.id, message_id=smoke_chats[call.message.chat.id]["message_id"])
             text += "с кайфом покурили калик и получили + 6 к ламповости!"
             await bot.send_message(call.message.chat.id, text, parse_mode='HTML', disable_web_page_preview=True)
+            chat = ChatModel.get_or_create(chat_id=call.message.chat.id)[0]
+            chat.last_kalik = datetime.datetime.now()
+            chat.save()
             del smoke_chats[call.message.chat.id]
