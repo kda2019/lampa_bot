@@ -14,9 +14,7 @@ async def clear_self(bot, message, sm, timeout=120):
     """ Принимает объект бота, объект входящего сообщения, объект исходящего сообщения, таймаут(сек).
     Удаляет отправленное ботом сообщение, и команду(либо сообщение) адресованное боту(при наличии прав админа)
     """
-    print('prehihi')
     await sleep(timeout)
-    print('hihi')
     with suppress(exceptions.MessageCantBeDeleted):
         await bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
     await bot.delete_message(chat_id=sm.chat.id, message_id=sm.message_id)
@@ -24,7 +22,7 @@ async def clear_self(bot, message, sm, timeout=120):
 
 def get_hours_str(hours):
     """
-    Принимает число на ваход число -> (int)
+    Принимает на ваход число -> (int)
     Возвращает слово "час" в нужном падеже -> (str)
     """
     if int(str(hours)[-1]) in [2, 3, 4] and hours not in [12, 13, 14]:
@@ -54,18 +52,18 @@ def get_minutes_str(minutes, y=False):
 
 
 async def start(bot, message):
-    start_text = "Добро пожаловать в лампового бота. Для старта добавьте меня в любой чат.\ Для подсказки по командам введите /help"
+    start_text = "Добро пожаловать в лампового бота. Для старта добавьте меня в любой чат.\n Для подсказки по командам введите /help"
     await bot.send_message(message.from_user.id, start_text)
 
 
 async def help(bot, message):
-    help_text = "Бот позволяет копить ламповость кушая шаурму и куря кальян, и соревноватся с другими участниками чата в количестве имеющейся ламповости.\n /eat_shawarma - позволит вам получить  +5, +2 или -3 к ламповости\n /check_my_lampovost - просмотреть вашу ламповость в текущем чате \n /check_top_lampovyh_cats - просмотреть топ 20 человек в чате по количеству ламповости\n\nДанные команды работают только в групповом чате, не пытайтесь их ввести здесь."
+    help_text = "Бот позволяет копить ламповость кушая шаурму и куря кальян, и соревноватся с другими участниками чата в количестве имеющейся ламповости.\n /eat_shawarma - позволит вам получить  +5, +2 или -3 к ламповости\n /check_my_lampovost - просмотреть вашу ламповость в текущем чате \n /check_top_lampovyh_cats - просмотреть топ 20 человек в чате по количеству ламповости \n /smoke_kalik - собрать 5 человек за 5 минут. В случае удачи все получают +6 ламповости'\n\nДанные команды работают только в групповом чате, не пытайтесь их ввести здесь."
     await bot.send_message(message.from_user.id, help_text)
 
 
 async def eat_shawarma(bot, message):
     """
-    Игра в которой юзер может получить +5, +2 или -3 к ламповости раз в 4 часа
+    Игра в которой участник может получить +5, +2 или -3 к ламповости раз в 3-6 часов
     """
     user, _ = UserModel.get_or_create(chat=ChatModel.get_or_create(chat_id=message.chat.id)[0],
                                       user_id=message.from_user.id)
@@ -93,7 +91,7 @@ async def eat_shawarma(bot, message):
 
 async def check_my_lampovost(bot, message):
     """
-    Выводит ламповость юзера в текущем чате
+    Выводит ламповость участника в текущем чате
     """
     user, _ = UserModel.get_or_create(chat=ChatModel.get_or_create(chat_id=message.chat.id)[0],
                                       user_id=message.from_user.id)
@@ -103,7 +101,7 @@ async def check_my_lampovost(bot, message):
 
 async def check_top_lampovyh_cats(bot, message):
     """
-    Выводит топ 20 юзеров в текущем чате
+    Выводит топ 20 участников в текущем чате
     """
     chat, _ = ChatModel.get_or_create(chat_id=message.chat.id)
     text = 'Топ ламповых котов этого чата:\n\n'
@@ -119,8 +117,8 @@ async def check_top_lampovyh_cats(bot, message):
 
 
 async def mute_user(bot, message):
-    """ Мутит юзера указанного в message.reply_to_message.from_user.id на время подсчитанное по формуле sqrt(UserModel.amount)
-    Если приходит запрос на мут адина, то вместо мута будут моментально удалятся все сообщения написанные админом.
+    """ При наличии прав администратора мутит пользователя указанного в message.reply_to_message.from_user.id на время подсчитанное по формуле sqrt(UserModel.amount)
+    Если приходит запрос на мут адина, то вместо мута будут моментально удалятся все сообщения написанные админом указанное количество времени.
     """
     if (await bot.get_chat_member(message.chat.id, TOKEN.split(':')[0])).status != "administrator":  # Если у бота нет прав администратора
         await bot.send_message(message.chat.id, 'Я не смогу это сделать пока не стану админом :(', reply_to_message_id=message.message_id)
@@ -164,7 +162,7 @@ async def mute_user(bot, message):
 
 
 async def smoke_kalik(bot, message):
-    """ Запускает процесс курения кальяна, в котором для получения ламповости необходимо набрать 5 человек.
+    """ Запускает процесс курения кальяна, в котором для получения ламповости необходимо набрать 5 человек за 5 минут.
     Выводит сообщение с оставшимся временем, уже присоеденившимся количеством участников и кнопкой для участия.
     """
     chat = ChatModel.get_or_create(chat_id=message.chat.id)[0]
@@ -191,7 +189,7 @@ async def smoke_kalik(bot, message):
                 await bot.delete_message(chat_id=message_info.chat.id, message_id=message_info.message_id)
                 return
             with suppress(exceptions.MessageNotModified):
-                await bot.edit_message_text(chat_id=message_info.chat.id, message_id=message_info.message_id, text=f"До конца сборов {smoke_chats[message.chat.id]['timeout']} {get_minutes_str(smoke_chats[message.chat.id]['timeout'], now=True)}, ждем 5 человек. Статус: {len(smoke_chats[message.chat.id]['users'])}/5", reply_markup=inline_btn)
+                await bot.edit_message_text(chat_id=message_info.chat.id, message_id=message_info.message_id, text=f"До конца сборов {smoke_chats[message.chat.id]['timeout']} {get_minutes_str(smoke_chats[message.chat.id]['timeout'], y=True)}, ждем 5 человек. Статус: {len(smoke_chats[message.chat.id]['users'])}/5", reply_markup=inline_btn)
         with suppress(exceptions.MessageCantBeDeleted):
             await bot.delete_message(chat_id=message_info.chat.id, message_id=message_info.message_id)
         print(smoke_chats[message.chat.id])

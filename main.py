@@ -57,11 +57,11 @@ async def group_messages_handler(message):
     if message.reply_to_message is not None and message.text.split()[0].lower() == 'мут':
         await mute_user(bot, message)
 
+
 #Хендлеры ниже отвечают за колбеки
 @dp.callback_query_handler()
 async def join_kalik_handler(call):
     await join_to_kalik(bot, call)
-
 
 
 executor.start_polling(dp)
