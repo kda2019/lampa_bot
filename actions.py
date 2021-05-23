@@ -1,28 +1,50 @@
-import random, datetime
+import random
+import datetime
 from models import ChatModel, UserModel
 from settings import TOKEN
 from asyncio import sleep
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram import exceptions
+from contextlib import suppress
 data = []
 smoke_chats = {}
 
 
+async def clear_self(bot, message, sm, timeout=120):
+    """ Принимает объект бота, объект входящего сообщения, объект исходящего сообщения, таймаут(сек).
+    Удаляет отправленное ботом сообщение, и команду(либо сообщение) адресованное боту(при наличии прав админа)
+    """
+    print('prehihi')
+    await sleep(timeout)
+    print('hihi')
+    with suppress(exceptions.MessageCantBeDeleted):
+        await bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
+    await bot.delete_message(chat_id=sm.chat.id, message_id=sm.message_id)
+
+
 def get_hours_str(hours):
-    if hours in [2, 3, 4]:
+    """
+    Принимает число на ваход число -> (int)
+    Возвращает слово "час" в нужном падеже -> (str)
+    """
+    if int(str(hours)[-1]) in [2, 3, 4] and hours not in [12, 13, 14]:
         hours_str = 'часа'
-    elif hours == 1:
+    elif int(str(hours)[-1]) == 1 and hours != 11:
         hours_str = 'час'
     else:
         hours_str = 'часов'
     return hours_str
 
 
-def get_minutes_str(minutes, now=False):
-    if minutes in [2, 3, 4]:
+def get_minutes_str(minutes, y=False):
+    """
+    Принимает число на ваход число -> (int) и параметр который заменяет (1)"минута" на (1)"минуту"
+    Возвращает слово "час" в нужном падеже -> (str)
+    """
+    if int(str(minutes)[-1]) in [2, 3, 4] and minutes not in [12, 13, 14]:
         minutes_str = 'минуты'
-    elif minutes == 1:
-        if now:
+    elif int(str(minutes)[-1]) == 1 and minutes != 11:
+        if y:
             minutes_str = 'минута'
         else:
             minutes_str = 'минуту'
@@ -47,24 +69,26 @@ async def eat_shawarma(bot, message):
     """
     user, _ = UserModel.get_or_create(chat=ChatModel.get_or_create(chat_id=message.chat.id)[0],
                                       user_id=message.from_user.id)
-    if datetime.datetime.now() - user.last_shava < datetime.timedelta(hours=4):
-        time_to_next = datetime.timedelta(hours=4) - (datetime.datetime.now() - user.last_shava)
+    if datetime.datetime.now() < user.last_shava:
+        time_to_next = user.last_shava - datetime.datetime.now()
         hours = time_to_next.seconds // 3600
         minutes = time_to_next.seconds % 3600 // 60
-        await bot.send_message(message.chat.id, f'Ты недавно уже кушал(а), сдедующая шавуха будет через {hours} {get_hours_str(hours)} {minutes} {get_minutes_str(minutes)}', reply_to_message_id=message.message_id)
+        sm = await bot.send_message(message.chat.id, f'Ты недавно уже кушал(а), следующая шавуха будет через {hours} {get_hours_str(hours)} {minutes} {get_minutes_str(minutes)}', reply_to_message_id=message.message_id)
     else:
         r = random.randint(1, 3)
         if r == 1:
             user.amount += 5
-            await bot.send_message(message.chat.id, 'Сладкая сочная шаурма. Пальчики оближешь. +5 к ламповости', reply_to_message_id=message.message_id)
+            sm = await bot.send_message(message.chat.id, 'Сладкая сочная шаурма. Пальчики оближешь. +5 к ламповости', reply_to_message_id=message.message_id)
         elif r == 2:
             user.amount += 2
-            await bot.send_message(message.chat.id, 'Сносная шавуха. Ты утолил(а) свой голод. +2 к ламповости', reply_to_message_id=message.message_id)
+            sm = await bot.send_message(message.chat.id, 'Сносная шавуха. Ты утолил(а) свой голод. +2 к ламповости', reply_to_message_id=message.message_id)
         else:
             user.amount += -3
-            await bot.send_message(message.chat.id, 'Придя домой ты знатно проблевался. -3 к ламповости', reply_to_message_id=message.message_id)
-        user.last_shava = datetime.datetime.now()
+            sm = await bot.send_message(message.chat.id, 'Придя домой ты знатно проблевался. -3 к ламповости', reply_to_message_id=message.message_id)
+        rh = random.randint(3, 6)
+        user.last_shava = datetime.datetime.now() + datetime.timedelta(hours=rh)
         user.save()
+    await clear_self(bot, message, sm)
 
 
 async def check_my_lampovost(bot, message):
@@ -73,7 +97,8 @@ async def check_my_lampovost(bot, message):
     """
     user, _ = UserModel.get_or_create(chat=ChatModel.get_or_create(chat_id=message.chat.id)[0],
                                       user_id=message.from_user.id)
-    await bot.send_message(message.chat.id, f'Твоя ламповость:  {user.amount}', reply_to_message_id=message.message_id)
+    sm = await bot.send_message(message.chat.id, f'Твоя ламповость:  {user.amount}', reply_to_message_id=message.message_id)
+    await clear_self(bot, message, sm)
 
 
 async def check_top_lampovyh_cats(bot, message):
@@ -144,12 +169,14 @@ async def smoke_kalik(bot, message):
     """
     chat = ChatModel.get_or_create(chat_id=message.chat.id)[0]
     if message.chat.id in smoke_chats:
-        await bot.send_message(message.chat.id, f'<a href="https://t.me/c/{abs(message.chat.id+1_000_000_000_000)}/{smoke_chats[message.chat.id]["message_id"]}">Калик</a> уже заправлен, ждем пока соберется компания.', reply_to_message_id=message.message_id, parse_mode='HTML')
+        sm = await bot.send_message(message.chat.id, f'<a href="https://t.me/c/{abs(message.chat.id+1_000_000_000_000)}/{smoke_chats[message.chat.id]["message_id"]}">Калик</a> уже заправлен, ждем пока соберется компания.', reply_to_message_id=message.message_id, parse_mode='HTML')
+        await clear_self(bot, message, sm)
     elif datetime.datetime.now() - chat.last_kalik < datetime.timedelta(hours=5):
         time_to_next = datetime.timedelta(hours=5) - (datetime.datetime.now() - chat.last_kalik)
         hours = time_to_next.seconds // 3600
         minutes = time_to_next.seconds % 3600 // 60
-        await bot.send_message(message.chat.id, f'Во время последнего посещения кальянной вас застукали менты и прикрыли заведение за нарушение правил локдауна. Подождите пока все уляжется. Ждать осталось {hours} {get_hours_str(hours)} {minutes} {get_minutes_str(minutes)}', reply_to_message_id=message.message_id)
+        sm = await bot.send_message(message.chat.id, f'Во время последнего посещения кальянной вас застукали менты и прикрыли заведение за нарушение правил локдауна. Подождите пока все уляжется. Ждать осталось {hours} {get_hours_str(hours)} {minutes} {get_minutes_str(minutes)}', reply_to_message_id=message.message_id)
+        await clear_self(bot, message, sm)
     else:
         smoke_chats[message.chat.id] = {'users': []}
         smoke_chats[message.chat.id]['users'].append(message.from_user.id)
@@ -163,11 +190,10 @@ async def smoke_kalik(bot, message):
             if message.chat.id not in smoke_chats:
                 await bot.delete_message(chat_id=message_info.chat.id, message_id=message_info.message_id)
                 return
-            try:
+            with suppress(exceptions.MessageNotModified):
                 await bot.edit_message_text(chat_id=message_info.chat.id, message_id=message_info.message_id, text=f"До конца сборов {smoke_chats[message.chat.id]['timeout']} {get_minutes_str(smoke_chats[message.chat.id]['timeout'], now=True)}, ждем 5 человек. Статус: {len(smoke_chats[message.chat.id]['users'])}/5", reply_markup=inline_btn)
-            except exceptions.MessageNotModified:
-                pass
-        await bot.delete_message(chat_id=message_info.chat.id, message_id=message_info.message_id)
+        with suppress(exceptions.MessageCantBeDeleted):
+            await bot.delete_message(chat_id=message_info.chat.id, message_id=message_info.message_id)
         print(smoke_chats[message.chat.id])
         del smoke_chats[message.chat.id]
         await bot.send_message(message.chat.id, "Пока вы ждали прибыла полиция, которая не пускает новых посетителей из-за нарушения режима локдауна. Вы не успели проскочить внутрь :(")
@@ -176,7 +202,7 @@ async def smoke_kalik(bot, message):
 
 
 async def join_to_kalik(bot, call):
-    """ Неразрывно связаня с функцией smoke_kalik(), срабатывает при нажатии кнопки.
+    """ Неразрывно связанная с функцией smoke_kalik(), срабатывает при нажатии кнопки.
     После того как будет набрано нужное количество людей, всем участникам будет выдано +6 к ламповости.
     """
     if call.from_user.id in smoke_chats[call.message.chat.id]['users']:
@@ -184,7 +210,8 @@ async def join_to_kalik(bot, call):
     else:
         smoke_chats[call.message.chat.id]['users'].append(call.from_user.id)
         inline_btn = InlineKeyboardMarkup().add(InlineKeyboardButton('Присоединится', callback_data='join_kalik'))
-        await bot.edit_message_text(chat_id=call.message.chat.id, message_id=smoke_chats[call.message.chat.id]["message_id"], text=f"До конца сборов {smoke_chats[call.message.chat.id]['timeout']+1} {get_minutes_str(smoke_chats[call.message.chat.id]['timeout']+1, now=True)}, ждем 5 человек. Статус: {len(smoke_chats[call.message.chat.id]['users'])}/5",reply_markup=inline_btn)
+        with suppress(exceptions.MessageNotModified):
+            await bot.edit_message_text(chat_id=call.message.chat.id, message_id=smoke_chats[call.message.chat.id]["message_id"], text=f"До конца сборов {smoke_chats[call.message.chat.id]['timeout']+1} {get_minutes_str(smoke_chats[call.message.chat.id]['timeout']+1, y=True)}, ждем 5 человек. Статус: {len(smoke_chats[call.message.chat.id]['users'])}/5",reply_markup=inline_btn)
         await call.answer(text="Вы успешно присоеденились к компании")
         if len(smoke_chats[call.message.chat.id]['users']) >= 5:
             text = "Ламповые коты "
@@ -198,7 +225,8 @@ async def join_to_kalik(bot, call):
                     text += f"<a href='https://t.me/{user_.user.username}'>{user_.user.first_name}</a>, "
                 user.amount += 6
                 user.save()
-            await bot.delete_message(chat_id=call.message.chat.id, message_id=smoke_chats[call.message.chat.id]["message_id"])
+            with suppress(exceptions.MessageCantBeDeleted):
+                await bot.delete_message(chat_id=call.message.chat.id, message_id=smoke_chats[call.message.chat.id]["message_id"])
             text += "с кайфом покурили калик и получили + 6 к ламповости!"
             await bot.send_message(call.message.chat.id, text, parse_mode='HTML', disable_web_page_preview=True)
             chat = ChatModel.get_or_create(chat_id=call.message.chat.id)[0]
