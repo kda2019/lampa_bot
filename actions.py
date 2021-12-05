@@ -112,7 +112,6 @@ async def eat_shawarma_call(bot, call):
         try:
             if random.random() < 0.03:
                 user.amount -= 15
-                sm = await bot.send_message(call.message.chat.id, )
                 await bot.edit_message_text(text='Шаурма из г*вна. Всякое бывает. -15 к ламповости',
                                             chat_id=call.message.chat.id, message_id=call.message.message_id,
                                             reply_markup='')
