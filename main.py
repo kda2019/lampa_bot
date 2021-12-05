@@ -9,7 +9,7 @@ dp = Dispatcher(bot)
 
 
 # Этот хендлер отвечает за удаление всех сообщений от админов находящихся в муте
-@dp.message_handler(lambda message:f"{message.from_user.id}_{message.chat.id}" in data, content_types=types.ContentType.ANY)
+@dp.message_handler(lambda message:f"{message.from_user.id}_{message.chat.id}" in muted_admins, content_types=types.ContentType.ANY)
 async def delete_message(message):
     await bot.delete_message(message.chat.id, message.message_id)
 
@@ -61,7 +61,10 @@ async def group_messages_handler(message):
 #Хендлеры ниже отвечают за колбеки
 @dp.callback_query_handler()
 async def join_kalik_handler(call):
-    await join_to_kalik(bot, call)
+    if call.data.startswith('eat_now'):
+        await eat_shawarma_call(bot, call)
+    elif call.data == 'join_kalik':
+        await join_to_kalik(bot, call)
 
 
 executor.start_polling(dp)
