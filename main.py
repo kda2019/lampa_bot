@@ -1,7 +1,10 @@
 import logging
 from aiogram import Bot, Dispatcher, executor, types
-from settings import TOKEN
+
+from lampa_bot.prototype_actions import EatShawarmaStrategy
+
 from actions import *
+from settings import TOKEN
 
 logging.basicConfig(level=logging.INFO)
 bot = Bot(TOKEN)
@@ -9,7 +12,8 @@ dp = Dispatcher(bot)
 
 
 # Этот хендлер отвечает за удаление всех сообщений от админов находящихся в муте
-@dp.message_handler(lambda message:f"{message.from_user.id}_{message.chat.id}" in muted_admins, content_types=types.ContentType.ANY)
+@dp.message_handler(lambda message: f"{message.from_user.id}_{message.chat.id}" in muted_admins,
+                    content_types=types.ContentType.ANY)
 async def delete_message(message):
     await bot.delete_message(message.chat.id, message.message_id)
 
@@ -18,7 +22,7 @@ async def delete_message(message):
 @dp.message_handler(commands=['eat_shawarma'])
 async def eat_shawarma_handler(message):
     if message.chat.id != message.from_user.id:
-        await eat_shawarma(bot, message)
+        await EatShawarmaStrategy(bot, message).start_eat_shawarma()
 
 
 @dp.message_handler(commands=['check_my_lampovost'])
@@ -58,11 +62,11 @@ async def group_messages_handler(message):
         await mute_user(bot, message)
 
 
-#Хендлеры ниже отвечают за колбеки
+# Хендлеры ниже отвечают за колбеки
 @dp.callback_query_handler()
-async def join_kalik_handler(call):
-    if call.data.startswith('eat_now'):
-        await eat_shawarma_call(bot, call)
+async def callbacks(call):
+    if call.data.startswith('eating_now'):
+        await EatShawarmaStrategy.eat_shawarma_call(bot, call)
     elif call.data == 'join_kalik':
         await join_to_kalik(bot, call)
 

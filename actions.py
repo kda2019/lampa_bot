@@ -70,6 +70,7 @@ async def eat_shawarma(bot, message):
     user, _ = UserModel.get_or_create(chat=ChatModel.get_or_create(chat_id=message.chat.id)[0],
                                       user_id=message.from_user.id)
     if datetime.datetime.now() < user.last_shava:
+        print(user.last_shava)
         time_to_next = user.last_shava - datetime.datetime.now()
         hours = time_to_next.seconds // 3600
         minutes = time_to_next.seconds % 3600 // 60

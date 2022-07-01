@@ -6,6 +6,6 @@ try:
 
 except ImportError:
     # Заменить токен на токен бота
-    TOKEN = "token"
+    TOKEN = "954054488:AAE10YWU4kWtgZJht3Fyansy1vxiQqXoUgk"
     # При необходимости заменить sqlite на другую базу данных
     db = peewee.SqliteDatabase('data.db')
