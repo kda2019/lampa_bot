@@ -3,7 +3,7 @@ import datetime
 from models import ChatModel, UserModel
 from settings import TOKEN
 from asyncio import sleep
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardRemove
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram import exceptions
 from contextlib import suppress
 muted_admins = []
@@ -55,12 +55,12 @@ def get_minutes_str(minutes, y=False):
 
 async def start(bot, message):
     start_text = "Добро пожаловать в лампового бота. Для старта добавьте меня в любой чат.\n Для подсказки по командам введите /help"
-    await bot.send_message(message.from_user.id, start_text)
+    await bot.send_message(message.chat.id, start_text)
 
 
 async def help(bot, message):
     help_text = "Бот позволяет копить ламповость кушая шаурму и куря кальян, и соревноватся с другими участниками чата в количестве имеющейся ламповости.\n /eat_shawarma - позволит вам получить  +5, +2 или -3 к ламповости\n /check_my_lampovost - просмотреть вашу ламповость в текущем чате \n /check_top_lampovyh_cats - просмотреть топ 20 человек в чате по количеству ламповости \n /smoke_kalik - собрать 5 человек за 5 минут. В случае удачи все получают +6 ламповости'\n\nПолученную ламповось можно потратить на мут других игроков. Для этого нужно в ответ на сообщение целевого пользователя отправить текст в формате \"мут <кол-во минут>\"\n\nДанные команды работают только в групповом чате, не пытайтесь их ввести здесь."
-    await bot.send_message(message.from_user.id, help_text)
+    await bot.send_message(message.chat.id, help_text)
 
 
 async def eat_shawarma(bot, message):
